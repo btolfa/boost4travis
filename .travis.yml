@@ -107,5 +107,6 @@ before_script:
     cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
 
 script:
+  # Build Boost
   - cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ install
   
