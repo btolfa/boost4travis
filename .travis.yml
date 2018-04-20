@@ -1,0 +1,111 @@
+language: cpp
+os: linux # Jobs are on Linux unless specified otherwise
+dist: trusty # Jobs are on Trusty unless specified otherwise
+sudo: false
+
+env:
+  global:
+    - BOOST_VERSION="1.67.0"
+    - LIBRARIES="--without-icu --with-libraries=chrono,log,program_options,date_time,thread,system,filesystem,regex,test"
+    - BUILD_FLAGS=""
+    - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
+
+matrix:
+  include:
+    # GCC 4.9
+    - env: COMPILER=g++-4.9
+      addons: { apt: { sources: ["ubuntu-toolchain-r-test"], packages: ["g++-4.9"] } } 
+    # GCC 5
+    - env: COMPILER=g++-5
+      addons: { apt: { sources: ["ubuntu-toolchain-r-test"], packages: ["g++-5"] } } 
+    # GCC 6
+    - env: COMPILER=g++-6
+      addons: { apt: { sources: ["ubuntu-toolchain-r-test"], packages: ["g++-6"] } } 
+    # GCC 7
+    - env: COMPILER=g++-7
+      addons: { apt: { sources: ["ubuntu-toolchain-r-test"], packages: ["g++-7"] } } 
+
+    # Clang 3.5
+    - env: COMPILER=clang++-3.5 
+      addons: { apt: { packages: ["clang-3.5"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-3.5"] } }
+    # Clang 3.6
+    - env: COMPILER=clang++-3.6 
+      addons: { apt: { packages: ["clang-3.6"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-3.6"] } }
+    # Clang 3.7
+    - env: COMPILER=clang++-3.7 
+      addons: { apt: { packages: ["clang-3.7"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-3.7"] } }
+    # Clang 3.8
+    - env: COMPILER=clang++-3.8 
+      addons: { apt: { packages: ["clang-3.8"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-3.8"] } }
+    # Clang 3.9
+    - env: COMPILER=clang++-3.9 
+      addons: { apt: { packages: ["clang-3.9"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-3.9"] } }
+    # Clang 4.0
+    - env: COMPILER=clang++-4.0 
+      addons: { apt: { packages: ["clang-4.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-4.0"] } }
+    # Clang 5.0
+    - env: COMPILER=clang++-5.0 
+      addons: { apt: { packages: ["clang-5.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-5.0"] } }
+    # Clang 6.0
+    - env: COMPILER=clang++-6.0 
+      addons: { apt: { packages: ["clang-6.0"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-6.0"] } }
+
+install:
+  - mkdir -p ${DEPS_DIR}
+
+  # override CXX set by Travis if needed
+  - if [[ "${COMPILER}" != "" ]]; then export CXX=${COMPILER}; fi
+  - ${CXX} --version
+
+  # Install libc++ and libc++abi if needed
+  - |
+    if [[ "${CXX%%+*}" == "clang" ]]; then
+
+      if   [[ "${CXX}" == "clang++-3.5" ]]; then LLVM_VERSION="3.5.2";
+      elif [[ "${CXX}" == "clang++-3.6" ]]; then LLVM_VERSION="3.6.2";
+      elif [[ "${CXX}" == "clang++-3.7" ]]; then LLVM_VERSION="3.7.1";
+      elif [[ "${CXX}" == "clang++-3.8" ]]; then LLVM_VERSION="3.8.1";
+      elif [[ "${CXX}" == "clang++-3.9" ]]; then LLVM_VERSION="3.9.1";
+      elif [[ "${CXX}" == "clang++-4.0" ]]; then LLVM_VERSION="4.0.1";
+      elif [[ "${CXX}" == "clang++-5.0" ]]; then LLVM_VERSION="5.0.1";
+      elif [[ "${CXX}" == "clang++-6.0" ]]; then LLVM_VERSION="6.0.0";
+      fi
+
+      LLVM_URL="http://llvm.org/releases/${LLVM_VERSION}/llvm-${LLVM_VERSION}.src.tar.xz"
+      LIBCXX_URL="http://llvm.org/releases/${LLVM_VERSION}/libcxx-${LLVM_VERSION}.src.tar.xz"
+      LIBCXXABI_URL="http://llvm.org/releases/${LLVM_VERSION}/libcxxabi-${LLVM_VERSION}.src.tar.xz"
+
+      cd ${DEPS_DIR} && mkdir -p llvm llvm/build llvm/projects/libcxx llvm/projects/libcxxabi
+      travis_retry wget -O - ${LLVM_URL} | tar --strip-components=1 -xJ -C llvm || exit 1
+      travis_retry wget -O - ${LIBCXX_URL} | tar --strip-components=1 -xJ -C llvm/projects/libcxx || exit 1
+      travis_retry wget -O - ${LIBCXXABI_URL} | tar --strip-components=1 -xJ -C llvm/projects/libcxxabi || exit 1
+
+      cmake -E chdir llvm/build cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${DEPS_DIR}/llvm/install || exit 1
+      cmake --build ${DEPS_DIR}/llvm/build --target cxx -- -j2 || exit 1
+      cmake -E chdir ${DEPS_DIR}/llvm/build make install-cxx install-cxxabi || exit 1
+
+      export CXXFLAGS="-std=c++14 -stdlib=libc++ -nostdinc++ -isystem ${DEPS_DIR}/llvm/install/include/c++/v1"
+      export LDFLAGS="-L ${DEPS_DIR}/llvm/install/lib -l c++ -l c++abi"
+      export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${DEPS_DIR}/llvm/install/lib"
+    fi
+
+before_script:
+  - |
+    BOOST_URL="https://dl.bintray.com/boostorg/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION//\./_}.tar.gz"
+
+    # create dirs for source and install
+    mkdir -p ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ${TRAVIS_BUILD_DIR}/boost
+    travis_retry wget --no-check-certificate --quiet -O - ${BOOST_URL} | tar --strip-components=1 -xz -C ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION}
+
+    if [[ "${CXX%%+*}" == "clang" ]]; then
+      export TOOLSET=clang
+      echo "using clang : : $CXX : <cxxflags>-std=c++14 <cxxflags>-fvisibility=hidden <cxxflags>-fPIC <cxxflags>-stdlib=libc++ <cxxflags>-nostdinc++ <cxxflags>-I${DEPS_DIR}/llvm/install/include/c++/v1 <linkflags>-stdlib=libc++ <linkflags>-L${DEPS_DIR}/llvm/install/lib <linkflags>-lc++ <linkflags>-lc++abi;" > ~/user-config.jam
+    else
+      export TOOLSET=gcc
+      echo "using gcc : : $CXX : <cxxflags>-std=c++14 <cxxflags>-fvisibility=hidden <cxxflags>-fPIC;" > ~/user-config.jam
+    fi
+    cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
+
+script:
+  - cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ install
+  
