@@ -25,9 +25,6 @@ matrix:
     - env: COMPILER=g++-7
       addons: { apt: { sources: ["ubuntu-toolchain-r-test"], packages: ["g++-7"] } } 
 
-    # Clang 3.5
-    - env: COMPILER=clang++-3.5 
-      addons: { apt: { packages: ["clang-3.5"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-3.5"] } }
     # Clang 3.6
     - env: COMPILER=clang++-3.6 
       addons: { apt: { packages: ["clang-3.6"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-3.6"] } }
@@ -81,8 +78,8 @@ install:
       travis_retry wget -O - ${LIBCXXABI_URL} | tar --strip-components=1 -xJ -C llvm/projects/libcxxabi || exit 1
 
       cmake -E chdir llvm/build cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${DEPS_DIR}/llvm/install || exit 1
-      cmake --build ${DEPS_DIR}/llvm/build --target cxx -- -j2 || exit 1
-      cmake -E chdir ${DEPS_DIR}/llvm/build make install-cxx install-cxxabi || exit 1
+      cmake --build ${DEPS_DIR}/llvm/build/projects/libcxx --target install -- -j2
+      cmake --build ${DEPS_DIR}/llvm/build/projects/libcxxabi --target install -- -j2
 
       export CXXFLAGS="-std=c++14 -stdlib=libc++ -nostdinc++ -isystem ${DEPS_DIR}/llvm/install/include/c++/v1"
       export LDFLAGS="-L ${DEPS_DIR}/llvm/install/lib -l c++ -l c++abi"
@@ -99,10 +96,10 @@ before_script:
 
     if [[ "${CXX%%+*}" == "clang" ]]; then
       export TOOLSET=clang
-      echo "using clang : : $CXX : <cxxflags>-std=c++14 <cxxflags>-fvisibility=hidden <cxxflags>-fPIC <cxxflags>-stdlib=libc++ <cxxflags>-nostdinc++ <cxxflags>-I${DEPS_DIR}/llvm/install/include/c++/v1 <linkflags>-stdlib=libc++ <linkflags>-L${DEPS_DIR}/llvm/install/lib <linkflags>-lc++ <linkflags>-lc++abi;" > ~/user-config.jam
+      echo "using clang : : $CXX : <cxxflags>-std=c++14 <cxxflags>-fvisibility=hidden <cxxflags>-fPIC <cxxflags>-stdlib=libc++ <cxxflags>-nostdinc++ <cxxflags>-I${DEPS_DIR}/llvm/install/include/c++/v1 <linkflags>-stdlib=libc++ <linkflags>-L${DEPS_DIR}/llvm/install/lib <linkflags>-lc++ <linkflags>-lc++abi ;" > ~/user-config.jam
     else
       export TOOLSET=gcc
-      echo "using gcc : : $CXX : <cxxflags>-std=c++14 <cxxflags>-fvisibility=hidden <cxxflags>-fPIC;" > ~/user-config.jam
+      echo "using gcc : : $CXX : <cxxflags>-std=c++14 <cxxflags>-fvisibility=hidden <cxxflags>-fPIC ;" > ~/user-config.jam
     fi
     cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
 
