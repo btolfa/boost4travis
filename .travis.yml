@@ -149,13 +149,13 @@ script:
   cmake -E chdir ${TRAVIS_BUILD_DIR} cmake -E tar cf ${DEPLOY_FILE} --format=7zip boost
   mkdir -p ${TRAVIS_BUILD_DIR}/deploy
   cmake -E copy ${TRAVIS_BUILD_DIR}/$DEPLOY_FILE ${TRAVIS_BUILD_DIR}/deploy
+  ls ${TRAVIS_BUILD_DIR}/deploy/
 
 deploy:
-  provider: releases
-  api_key:
-    secure: tjF4f7tJur9iPlgc4NMF9+3gcujhAg4NSV+iJRWJgBXZKYHbsLSAQo0Ejmt1GgeNvzmVhLqPkM9d/xvu8j7nkwkFjrLhlXpVvwV4u7xmON6lqiUwABHg5E+UfNPp74D0Cj8hmuzwIe61141kM0APWiYxhKyRoR7VVI0u5PeEDVpmsq530qJWz5eLGgThDj72vurP9QgKmrcS8icY0IS43FqR4Bc/khLm0fbLj0VMa+ynwGkucvi2e77zNnW7Hdy2loB60ZjLc1zCFgaotJy1c6rXPSacdvxfI65hMtQzSj1CUd2LbeE7MKZKFxjS6adt7kii9Dz1DRGTGpJDTU7Jeb2v7705pRwJi4aRnkj8sCeVUZEy1FCw24vQz1r0mE0OYP6Zm5UcvkG00egCYFdqBJ6ah2wWe0WPIRpZV+3QsCJExIr6Ioomw9z3UR2Q+4Y+c/TX9b3QmWosn4bL53qIeC7wKL0Qh2Xq5g8gB+FxCtpaRDWYP1vhm5OTPucoGDKjHDvE8FPs1bs7yd4Cf8MzbRKamEoolgz4HLRhAAVic5PFdzsKmdk4EIY8vKrTeA9FlQ6LMOXNjzdt0A9rLtBBlSIVSBUeY3bkRd2/78QviG0g53oiBE9t+d5lZ6x7fJ47E5Oi61xoHvMwxWbUZpsSXsfH772dYvM1zMwQm6YZiKQ=
-  file_glob: true
-  file: deploy/**
+  provider: s3
   skip_cleanup: true
-  on:
-    tags: true
+  local_dir: deploy
+  bucket: kovri-ci
+  access_key_id: AKIAIA5FW5XYQ2VNCAKA
+  secret_access_key:
+    secure: XZ9QC3DxlaPnNQewJxLmcX7CxVqhP33Q/MABNET7YIt/Wpe2oLjTtIFp5KWgGXBIrZ5snpTiAw5v2hA0fhaWxUW/FEI1oyE7Ps7XiF5enUxfk2U6jaGH3oQ726vDE26cMtZ6BaxKNQR0XqE973omOkPAV64MDPSTJ/uRVqhj6c3tzB4RsTBDCPf18P2Xo7kFbuBzCHP6/pRfg1/zavVMr5JzjdJsmGI7/hmv0zgB8LgyZRTimzwyiHpqNQOo+AY6f6d2vHLYV4uE0WG2R0gWbMeCbTnC+BGNRJ+HnL93Ja9Rd27ekZshuyUpYkYIl3I+nX0dkuYd7GXp00fVH00oYube9ZArcdfjtSvCJxsbW9LMeoNtwFRgJrn4Qu+6Fzf8KNQownryPYIwu0dD5E20Bl3djUZoAv8Wd19R6wIrpbPj3cOXIQGP/TruOibMz5uUWUrvqOj8qUVAYZ4pvKktQjUOkcv/Ln7S8IwbYr3EYDo7YlR0uP+HotehAtsFlXBGtn3LAZRPUJHEJtp4j/WZw1BVRufuFmcDsj0NoPpJZgEKFJoyFbT93jyMrCt+PUswY7m/f36C0eSJGrbYJue1z/CLBH5c3LkD+Nerz/2AJEXBlIhPfa/iKIUDx4zbPXQT2lUwsxULOUZeWSjd8tVBIr/r26Bg+cPGVU01+INXXks=
