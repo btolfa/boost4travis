@@ -145,11 +145,10 @@ script:
   fi
   VERSION="${CXX##*-}"
   DEPLOY_FILE="boost-${BOOST_VERSION//\./_}-${COMP}-${VERSION//\./_}.7z"
-  echo $DEPLOY_FILE
   cmake -E chdir ${TRAVIS_BUILD_DIR} cmake -E tar cf ${DEPLOY_FILE} --format=7zip boost
   mkdir -p ${TRAVIS_BUILD_DIR}/deploy
   cmake -E copy ${TRAVIS_BUILD_DIR}/$DEPLOY_FILE ${TRAVIS_BUILD_DIR}/deploy
-  ls ${TRAVIS_BUILD_DIR}/deploy/
+- cd ${TRAVIS_BUILD_DIR} && ls ${TRAVIS_BUILD_DIR}/deploy/
 
 deploy:
   provider: s3
