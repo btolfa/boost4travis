@@ -137,14 +137,14 @@ before_script:
   fi
   cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
 script:
-- cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ install
+- travis_wait cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} -d0 threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ install
 - |
   COMP="${CXX%%+*}"
-  if [[ "${comp}" == "g" ]]; then
+  if [[ "${COMP}" == "g" ]]; then
     COMP="gcc"
   fi
-  VERSION="${COMPILER##*+}"
-  DEPLOY_FILE="boost-${BOOST_VERSION//\./_}-${COMP}-${VERSION}.7z"
+  VERSION="${CXX##*-}"
+  DEPLOY_FILE="boost-${BOOST_VERSION//\./_}-${COMP}-${VERSION//\./_}.7z"
   echo $DEPLOY_FILE
   cmake -E chdir ${TRAVIS_BUILD_DIR} cmake -E tar cf ${DEPLOY_FILE} --format=7zip boost
   mkdir -p ${TRAVIS_BUILD_DIR}/deploy
