@@ -130,14 +130,17 @@ before_script:
 
   if [[ "${CXX%%+*}" == "clang" ]]; then
     export TOOLSET=clang
-    echo "using clang : : $CXX : <cxxflags>-std=c++14 <cxxflags>-fvisibility=hidden <cxxflags>-fPIC <cxxflags>-stdlib=libc++ <cxxflags>-nostdinc++ <cxxflags>-I${DEPS_DIR}/llvm/install/include/c++/v1 <linkflags>-stdlib=libc++ <linkflags>-L${DEPS_DIR}/llvm/install/lib <linkflags>-lc++ <linkflags>-lc++abi ;" > ~/user-config.jam
+    echo 'using clang : : $CXX : <cxxflags>"-Wno-c99-extensions -std=c++14 -stdlib=libc++ -nostdinc++ -isystem ${DEPS_DIR}/llvm/install/include/c++/v1 -fvisibility=hidden -fPIC" <linkflags>"-stdlib=libc++ -L${DEPS_DIR}/llvm/install/lib -lc++ -lc++abi" ;' > ~/user-config.jam
+
   else
     export TOOLSET=gcc
-    echo "using gcc : : $CXX : <cxxflags>-std=c++14 <cxxflags>-fvisibility=hidden <cxxflags>-fPIC ;" > ~/user-config.jam
+    echo 'using gcc : : $CXX : <cxxflags>"-Wno-c99-extensions -std=c++14 -fvisibility=hidden -fPIC" ;' > ~/user-config.jam
   fi
   cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
 script:
-- travis_wait cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} -d0 threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ install
+- travis_wait cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET}
+  -d0 threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/
+  install
 - |
   COMP="${CXX%%+*}"
   if [[ "${COMP}" == "g" ]]; then
@@ -149,12 +152,12 @@ script:
   mkdir -p ${TRAVIS_BUILD_DIR}/deploy
   cmake -E copy ${TRAVIS_BUILD_DIR}/$DEPLOY_FILE ${TRAVIS_BUILD_DIR}/deploy
 - cd ${TRAVIS_BUILD_DIR} && ls ${TRAVIS_BUILD_DIR}/deploy/
-
 deploy:
-  provider: s3
-  skip_cleanup: true
-  local_dir: deploy
-  bucket: kovri-ci
-  access_key_id: AKIAIA5FW5XYQ2VNCAKA
-  secret_access_key:
-    secure: XZ9QC3DxlaPnNQewJxLmcX7CxVqhP33Q/MABNET7YIt/Wpe2oLjTtIFp5KWgGXBIrZ5snpTiAw5v2hA0fhaWxUW/FEI1oyE7Ps7XiF5enUxfk2U6jaGH3oQ726vDE26cMtZ6BaxKNQR0XqE973omOkPAV64MDPSTJ/uRVqhj6c3tzB4RsTBDCPf18P2Xo7kFbuBzCHP6/pRfg1/zavVMr5JzjdJsmGI7/hmv0zgB8LgyZRTimzwyiHpqNQOo+AY6f6d2vHLYV4uE0WG2R0gWbMeCbTnC+BGNRJ+HnL93Ja9Rd27ekZshuyUpYkYIl3I+nX0dkuYd7GXp00fVH00oYube9ZArcdfjtSvCJxsbW9LMeoNtwFRgJrn4Qu+6Fzf8KNQownryPYIwu0dD5E20Bl3djUZoAv8Wd19R6wIrpbPj3cOXIQGP/TruOibMz5uUWUrvqOj8qUVAYZ4pvKktQjUOkcv/Ln7S8IwbYr3EYDo7YlR0uP+HotehAtsFlXBGtn3LAZRPUJHEJtp4j/WZw1BVRufuFmcDsj0NoPpJZgEKFJoyFbT93jyMrCt+PUswY7m/f36C0eSJGrbYJue1z/CLBH5c3LkD+Nerz/2AJEXBlIhPfa/iKIUDx4zbPXQT2lUwsxULOUZeWSjd8tVBIr/r26Bg+cPGVU01+INXXks=
+  provider: releases
+  api_key:
+    secure: F+l0z9+oTk+ryi5iKtia0Ctt0XA8HGZWtOu1qhhydXsXraADGV0v7SdQC6rkGup2GplzGUNXcf3qhcRNM5yOsOlwdyG0Ga7UtIMLpaZ13hJEyKPsi4xd4BF+0z55mq6PEkrFZJZw8kJekeOW7Z1biE8Y4upevKWWClAFkD6TXKn928L+bLlsg8MvtShE5HZrDgX7HV7SuIQ9c4pIG9Sgxt8dHUASukbQYwxkviL+k8HfHD/bUxFmnSlPRMUHKuwklsXX6OcB/355tCPIrjy2nVaQIoOdad2hfHgLRjW1jVK0xZ6IdE7lTceTY/pn2DXmu3AJH63Xt6ck3nd1bG0Peay+8qK3Boui4bSIiuYYm8cWP23M1cxs1ynFmG5V1xKzFC49aQm9d+iLtWMqItYa3E/NQIn5wha4HWArVnfGxJzuIFqClnkWSq/t49t4gVRWIC6EsXC6g1r/cFLZwNICIbxo0qPkvdo0/kE1K+kaAaa3LxBGxtgbNvbCCg1fE1fwopOpAC6N3CV28S9ty5UaJTblqHyS7nFkKPWa+kJPutO/aK/uE/4MsR6udIRHUJKyMPvQGSqUdwdBcUqkckraCaQW9S0qO9vB+qEl+SMM6HWNBmyB+W/WTMGjZD5KJPx+orLZ7r0ZLZHY3dkMTkHewhoAuqjOZ7DUr03EaT/UY4c=
+  file_glob: true 
+  file: deploy/**
+  skip_cleanup: true 
+  on:
+    tags: true
