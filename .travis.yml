@@ -8,67 +8,6 @@ env:
   - LIBRARIES="--without-icu --with-libraries=chrono,log,program_options,date_time,thread,system,filesystem,regex,test"
   - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
 matrix:
-  include:
-  - env: COMPILER=g++-4.9
-    addons:
-      apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - g++-4.9
-  - env: COMPILER=clang++-3.6
-    addons:
-      apt:
-        packages:
-        - clang-3.6
-        sources:
-        - ubuntu-toolchain-r-test
-        - llvm-toolchain-trusty-3.6
-  - env: COMPILER=g++-5
-    addons:
-      apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - g++-5
-  - env: COMPILER=g++-6
-    addons:
-      apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - g++-6
-  - env: COMPILER=g++-7
-    addons:
-      apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - g++-7
-  - env: COMPILER=clang++-3.8
-    addons:
-      apt:
-        packages:
-        - clang-3.8
-        sources:
-        - ubuntu-toolchain-r-test
-        - llvm-toolchain-trusty-3.8
-  - env: COMPILER=clang++-3.9
-    addons:
-      apt:
-        packages:
-        - clang-3.9
-        sources:
-        - ubuntu-toolchain-r-test
-        - llvm-toolchain-trusty-3.9
-  - env: COMPILER=clang++-4.0
-    addons:
-      apt:
-        packages:
-        - clang-4.0
-        sources:
-        - ubuntu-toolchain-r-test
-        - llvm-toolchain-trusty-4.0
   - env: COMPILER=clang++-5.0
     addons:
       apt:
@@ -77,14 +16,21 @@ matrix:
         sources:
         - ubuntu-toolchain-r-test
         - llvm-toolchain-trusty-5.0
-  - env: COMPILER=clang++-6.0
+  include:
+  - env: COMPILER=g++-4.9
     addons:
       apt:
-        packages:
-        - clang-6.0
         sources:
         - ubuntu-toolchain-r-test
-        - llvm-toolchain-trusty-6.0
+        packages:
+        - g++-4.9
+  - env: COMPILER=g++-7
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
 install:
 - mkdir -p ${DEPS_DIR}
 - if [[ "${COMPILER}" != "" ]]; then export CXX=${COMPILER}; fi
@@ -130,12 +76,14 @@ before_script:
   travis_retry wget --no-check-certificate --quiet -O - ${BOOST_URL} | tar --strip-components=1 -xz -C ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION}
 
   if [[ "${CXX%%+*}" == "clang" ]]; then
-    export TOOLSET="clang-${CXX##*-}"
+    export TOOLSET="clang"
     export BOOST_CXXFLAGS="-Wno-c99-extensions -std=c++14 -stdlib=libc++ -nostdinc++ -isystem ${DEPS_DIR}/llvm/install/include/c++/v1 -fvisibility=hidden -fPIC"
     export BOOST_LINKFLAGS="-stdlib=libc++ -L${DEPS_DIR}/llvm/install/lib -lc++ -lc++abi"
+    echo "using clang : : ${CXX} ; " >> ~/user-config.jam
   else
-    export TOOLSET="gcc-${CXX##*-}"
+    export TOOLSET="gcc"
     export BOOST_CXXFLAGS="-Wno-c99-extensions -std=c++14 -fvisibility=hidden -fPIC"
+    echo "using gcc : : ${CXX} ; " >> ~/user-config.jam
   fi
   cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
 script:
