@@ -130,15 +130,16 @@ before_script:
   travis_retry wget --no-check-certificate --quiet -O - ${BOOST_URL} | tar --strip-components=1 -xz -C ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION}
 
   if [[ "${CXX%%+*}" == "clang" ]]; then
-    export TOOLSET=clang
-    cp ${TRAVIS_BUILD_DIR}/clang-user-config.jam ~/user-config.jam
+    export TOOLSET="clang-${CXX##*-}"
+    export BOOST_CXXFLAGS="-Wno-c99-extensions -std=c++14 -stdlib=libc++ -nostdinc++ -isystem ${DEPS_DIR}/llvm/install/include/c++/v1 -fvisibility=hidden -fPIC"
+    export BOOST_LINKFLAGS="-stdlib=libc++ -L${DEPS_DIR}/llvm/install/lib -lc++ -lc++abi"
   else
-    export TOOLSET=gcc
-    cp ${TRAVIS_BUILD_DIR}/gcc-user-config.jam ~/user-config.jam
+    export TOOLSET="gcc-${CXX##*-}"
+    export BOOST_CXXFLAGS="-Wno-c99-extensions -std=c++14 -fvisibility=hidden -fPIC"
   fi
   cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
 script:
-- travis_wait cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} -d0 threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ install
+- travis_wait cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} cxxflags="$BOOST_CXXFLAGS" linkflags="$BOOST_LINKFLAGS" -d0 threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ install
 - |
   COMP="${CXX%%+*}"
   if [[ "${COMP}" == "g" ]]; then
