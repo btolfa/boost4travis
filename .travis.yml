@@ -16,6 +16,14 @@ matrix:
         - ubuntu-toolchain-r-test
         packages:
         - g++-4.9
+  - env: COMPILER=clang++-3.6
+    addons:
+      apt:
+        packages:
+        - clang-3.6
+        sources:
+        - ubuntu-toolchain-r-test
+        - llvm-toolchain-trusty-3.6
   - env: COMPILER=g++-5
     addons:
       apt:
@@ -37,14 +45,6 @@ matrix:
         - ubuntu-toolchain-r-test
         packages:
         - g++-7
-  - env: COMPILER=clang++-3.6
-    addons:
-      apt:
-        packages:
-        - clang-3.6
-        sources:
-        - ubuntu-toolchain-r-test
-        - llvm-toolchain-trusty-3.6
   - env: COMPILER=clang++-3.8
     addons:
       apt:
