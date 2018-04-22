@@ -1,0 +1,5 @@
+import os ;
+local COMP = [ os.environ COMPILER ] ;
+local DEPS_DIR = [ os.environ DEPS_DIR ] ;
+
+using gcc : : $(COMP) : <cxxflags>"-Wno-c99-extensions -std=c++14 -fvisibility=hidden -fPIC" ;
