@@ -6,7 +6,6 @@ env:
   global:
   - BOOST_VERSION="1.67.0"
   - LIBRARIES="--without-icu --with-libraries=chrono,log,program_options,date_time,thread,system,filesystem,regex,test"
-  - BUILD_FLAGS=""
   - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
 matrix:
   include:
@@ -116,9 +115,11 @@ install:
     cmake --build ${DEPS_DIR}/llvm/build/projects/libcxx --target install -- -j2
     cmake --build ${DEPS_DIR}/llvm/build/projects/libcxxabi --target install -- -j2
 
-    export CXXFLAGS="-std=c++14 -stdlib=libc++ -nostdinc++ -isystem ${DEPS_DIR}/llvm/install/include/c++/v1"
-    export LDFLAGS="-L ${DEPS_DIR}/llvm/install/lib -l c++ -l c++abi"
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${DEPS_DIR}/llvm/install/lib"
+    VERSION="${CXX##*-}"
+    DEPLOY_FILE="libcxx-for-clang-${VERSION//\./_}.7z"
+    cmake -E chdir ${DEPS_DIR} cmake -E tar cf $DEPLOY_FILE --format=7zip llvm/install
+    mkdir -p ${TRAVIS_BUILD_DIR}/deploy
+    cp ${DEPS_DIR}/$DEPLOY_FILE ${TRAVIS_BUILD_DIR}/deploy
   fi
 before_script:
 - |
@@ -130,17 +131,12 @@ before_script:
 
   if [[ "${CXX%%+*}" == "clang" ]]; then
     export TOOLSET=clang
-    echo 'using clang : : $CXX : <cxxflags>"-Wno-c99-extensions -std=c++14 -stdlib=libc++ -nostdinc++ -isystem ${DEPS_DIR}/llvm/install/include/c++/v1 -fvisibility=hidden -fPIC" <linkflags>"-stdlib=libc++ -L${DEPS_DIR}/llvm/install/lib -lc++ -lc++abi" ;' > ~/user-config.jam
-
   else
     export TOOLSET=gcc
-    echo 'using gcc : : $CXX : <cxxflags>"-Wno-c99-extensions -std=c++14 -fvisibility=hidden -fPIC" ;' > ~/user-config.jam
   fi
   cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
 script:
-- travis_wait cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET}
-  -d0 threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/
-  install
+- travis_wait cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} -d0 threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ --user-config=${TRAVIS_BUILD_DIR}/user-config.jam install
 - |
   COMP="${CXX%%+*}"
   if [[ "${COMP}" == "g" ]]; then
