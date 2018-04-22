@@ -87,7 +87,7 @@ before_script:
   fi
   cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
 script:
-- travis_wait cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} cxxflags="$BOOST_CXXFLAGS" linkflags="$BOOST_LINKFLAGS" -d0 threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ install
+- travis_wait cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./b2 toolset=${TOOLSET} cxxflags='${BOOST_CXXFLAGS}' linkflags='${BOOST_LINKFLAGS}' -d0 threading=multi threadapi=pthread variant=release --prefix=${TRAVIS_BUILD_DIR}/boost/ install
 - |
   COMP="${CXX%%+*}"
   if [[ "${COMP}" == "g" ]]; then
