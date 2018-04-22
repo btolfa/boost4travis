@@ -8,6 +8,7 @@ env:
   - LIBRARIES="--without-icu --with-libraries=chrono,log,program_options,date_time,thread,system,filesystem,regex,test"
   - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
 matrix:
+  include:
   - env: COMPILER=clang++-5.0
     addons:
       apt:
@@ -16,7 +17,6 @@ matrix:
         sources:
         - ubuntu-toolchain-r-test
         - llvm-toolchain-trusty-5.0
-  include:
   - env: COMPILER=g++-4.9
     addons:
       apt:
