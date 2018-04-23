@@ -82,6 +82,7 @@ before_script:
   else
     export TOOLSET="gcc"
     export BOOST_CXXFLAGS="-Wno-c99-extensions -std=c++14 -fvisibility=hidden -fPIC"
+    echo "using gcc : : ${CXX} ; " >> ~/user-config.jam
   fi
   cmake -E chdir ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION} ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-toolset=${TOOLSET} ${LIBRARIES}
 script:
